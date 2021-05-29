@@ -1,0 +1,125 @@
+import React, { useState, useRef } from "react";
+import MultipleKey from "../Keys/Multiple";
+import SingleKey from "../Keys/Single";
+
+function KeyPad({ setText, text }) {
+  const keysValues = [
+    { type: "single", value: "1" },
+    { type: "multiple", longPressValue: "2", value: "abc" },
+    { type: "multiple", longPressValue: "3", value: "def" },
+    { type: "multiple", longPressValue: "4", value: "ghi" },
+    { type: "multiple", longPressValue: "5", value: "jkl" },
+    { type: "multiple", longPressValue: "6", value: "mno" },
+    { type: "multiple", longPressValue: "7", value: "pqrs" },
+    { type: "multiple", longPressValue: "8", value: "tuv" },
+    { type: "multiple", longPressValue: "9", value: "wxyz" },
+    { type: "single", value: "*" },
+    { type: "single", value: "0" },
+    { type: "single", value: "#" },
+  ];
+
+  const timer = useRef(null);
+  const itr = useRef(0);
+  const [buttonIdx, setButtonIdx] = useState(null);
+
+  const onClickHandler = (index) => {
+    console.log(timer.current);
+    if (timer.current === null) {
+      if (keysValues[index].type === "single") {
+        let newText = {
+          previousValue: text.current.previousValue + keysValues[index].value,
+          currentValue: "",
+        };
+        setText(newText);
+      } else {
+        itr.current = 0;
+        let newText = {
+          previousValue: text.current.previousValue,
+          currentValue: keysValues[index].value[itr.current],
+        };
+
+        setText(newText);
+        timer.current = setTimeout(() => {
+          let modified = {
+            previousValue:
+              text.current.previousValue + text.current.currentValue,
+            currentValue: "",
+          };
+
+          setText(modified);
+        }, 1000);
+      }
+    } else {
+      if (index === buttonIdx) {
+        clearTimeout(timer.current);
+        timer.current = null;
+        itr.current = (itr.current + 1) % keysValues[index].value.length;
+        let newText = {
+          previousValue: text.current.previousValue,
+          currentValue: keysValues[index].value[itr.current],
+        };
+        setText(newText);
+        timer.current = setTimeout(() => {
+          let modified = {
+            previousValue:
+              text.current.previousValue + text.current.currentValue,
+            currentValue: "",
+          };
+
+          setText(modified);
+        }, 1000);
+      } else if (keysValues[index].type === "multiple") {
+        clearTimeout(timer.current);
+        timer.current = null;
+        itr.current = 0;
+        setText({
+          previousValue: text.current.previousValue + text.current.currentValue,
+          currentValue: keysValues[index].value[itr.current],
+        });
+        timer.current = setTimeout(() => {
+          setText({
+            previousValue:
+              text.current.previousValue + text.current.currentValue,
+            currentValue: "",
+          });
+        }, 1000);
+      } else {
+        clearTimeout(timer.current);
+        timer.current = null;
+        setText({
+          previousValue:
+            text.current.previousValue +
+            text.current.currentValue +
+            keysValues[index].value,
+          currentValue: "",
+        });
+      }
+    }
+    setButtonIdx(index);
+  };
+
+  return (
+    <div className="w-full my-2 px-4">
+      <div className="grid grid-cols-3">
+        {keysValues.map((KEY, index) => {
+          const data = { ...KEY, id: index };
+          return KEY.type === "single" ? (
+            <SingleKey
+              data={data}
+              onClickHandler={onClickHandler}
+              key={index}
+            />
+          ) : (
+            <MultipleKey
+              data={data}
+              onClickHandler={onClickHandler}
+              key={index}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default KeyPad;
