@@ -21,9 +21,43 @@ function KeyPad({ setText, text }) {
   const timer = useRef(null);
   const itr = useRef(0);
   const [buttonIdx, setButtonIdx] = useState(null);
+  const [time, setTime] = useState({ start: 0, end: 0 });
+  const [isLongPressed, setIsLongPressed] = useState(false);
+
+  const onMouseDownHandler = (index) => {
+    setTime({ start: Date.now(), end: time.end });
+    setIsLongPressed(false);
+  };
+
+  const onMouseUpHandler = (index) => {
+    const newTime = { start: time.start, end: Date.now() };
+    setTime(newTime);
+    if (newTime.end - newTime.start > 1000) {
+      if (timer.current === null) {
+        let newText = {
+          previousValue:
+            text.current.previousValue + keysValues[index].longPressValue,
+          currentValue: "",
+        };
+        setText(newText);
+      } else {
+        clearTimeout(timer.current);
+        timer.current = null;
+        setText({
+          previousValue:
+            text.current.previousValue +
+            text.current.currentValue +
+            keysValues[index].longPressValue,
+          currentValue: "",
+        });
+      }
+      setIsLongPressed(true);
+    }
+  };
 
   const onClickHandler = (index) => {
-    console.log(timer.current);
+    // console.log("Click", time.end - time.start);
+    if (isLongPressed) return;
     if (timer.current === null) {
       if (keysValues[index].type === "single") {
         let newText = {
@@ -37,7 +71,6 @@ function KeyPad({ setText, text }) {
           previousValue: text.current.previousValue,
           currentValue: keysValues[index].value[itr.current],
         };
-
         setText(newText);
         timer.current = setTimeout(() => {
           let modified = {
@@ -45,7 +78,6 @@ function KeyPad({ setText, text }) {
               text.current.previousValue + text.current.currentValue,
             currentValue: "",
           };
-
           setText(modified);
         }, 1000);
       }
@@ -65,7 +97,6 @@ function KeyPad({ setText, text }) {
               text.current.previousValue + text.current.currentValue,
             currentValue: "",
           };
-
           setText(modified);
         }, 1000);
       } else if (keysValues[index].type === "multiple") {
@@ -113,6 +144,8 @@ function KeyPad({ setText, text }) {
             <MultipleKey
               data={data}
               onClickHandler={onClickHandler}
+              onMouseDownHandler={onMouseDownHandler}
+              onMouseUpHandler={onMouseUpHandler}
               key={index}
             />
           );
